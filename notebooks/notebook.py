@@ -70,7 +70,7 @@ def load_data(pd, pl):
     # Load the dataset
     # Attempt to load from the default location for downloaded Kaggle datasets
     df = pl.read_csv(
-        str(mo.notebook_location() / "london_weather_data_1979_to_2023.csv")
+        str(mo.notebook_location() / "public/london_weather_data_1979_to_2023.csv")
     ).to_pandas()
 
     # Process the dataset according to the provided column specifications:
