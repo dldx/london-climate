@@ -6,6 +6,8 @@
 #     "plotly-express",
 #     "plotly==6.0.1",
 #     "numpy==2.2.5",
+#     "polars==1.29.0",
+#     "pyarrow==20.0.0",
 # ]
 # ///
 
@@ -16,6 +18,7 @@ app = marimo.App()
 
 with app.setup:
     import marimo as mo
+
 
 @app.cell
 def _():
@@ -29,6 +32,7 @@ async def _(micropip):
     await micropip.install("polars")
     await micropip.install("plotly")
     return
+
 
 @app.cell
 def _(date_observed, format_date):
@@ -50,7 +54,8 @@ def _():
     import plotly.graph_objects as go
     import plotly.express as px
     import numpy as np
-    return datetime, go, np, pd, px
+    import polars as pl
+    return datetime, go, np, pd, pl, px
 
 
 @app.cell
@@ -61,10 +66,12 @@ def _():
 
 
 @app.cell
-def load_data(pd):
+def load_data(pd, pl):
     # Load the dataset
     # Attempt to load from the default location for downloaded Kaggle datasets
-    df = pl.read_csv(str(mo.notebook_location() / "london_weather_data_1979_to_2023.csv")).to_pandas()
+    df = pl.read_csv(
+        str(mo.notebook_location() / "london_weather_data_1979_to_2023.csv")
+    ).to_pandas()
 
     # Process the dataset according to the provided column specifications:
     # DATE: Date in YYYYMMDD format
