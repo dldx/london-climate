@@ -220,7 +220,7 @@ def plot_historical_temperatures(
 
     # Adjust layout
     fig.update_layout(
-        title=f"<b>London Temperature on Worker's day (1st Map) (1980-2025)</b>",
+        title=f"<b>London Temperature on {format_date(date_observed.value)} (1980-2025)</b>",
         xaxis_title="<b>Year</b>",
         yaxis_title="<b>Temperature (°C)</b>",
         template="plotly_white",
