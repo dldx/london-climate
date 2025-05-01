@@ -38,10 +38,10 @@ async def _(micropip):
 def _(date_observed, format_date):
     mo.md(
         f"""
-        # London Temperature Analysis (1924-2024)
+        # London Temperature Analysis (1980-2024)
 
-        This notebook analyzes historical temperature data for London, focusing on {format_date(date_observed.value)} temperatures over the past 100 years.
-        We'll highlight tomorrow's forecasted temperature of 29°C, which appears to be exceptionally warm compared to historical data.
+        This notebook analyzes historical temperature data for London, focusing on {format_date(date_observed.value)} temperatures over the past 40 years.
+        We'll highlight today's forecasted high temperature of 29°C, which appears to be exceptionally warm compared to historical data.
         """
     )
     return
@@ -268,29 +268,25 @@ def plot_historical_temperatures(
 @app.cell
 def temperature_comparison(date_observed, format_date, go, may_1st_data):
     # Calculate statistics for historical May 1st temperatures
-    avg_mean_temp = may_1st_data["mean_temp"].mean()
-    max_historical_mean = may_1st_data["mean_temp"].max()
-    min_historical_mean = may_1st_data["mean_temp"].min()
+    avg_max_temp = may_1st_data["max_temp"].mean()
+    max_historical_max = may_1st_data["max_temp"].max()
+    min_historical_max = may_1st_data["max_temp"].min()
 
     # Calculate statistics for max temperatures if available
-    if "max_temp" in may_1st_data.columns:
-        all_time_max = may_1st_data["max_temp"].max()
-        all_time_max_year = may_1st_data.loc[
-            may_1st_data["max_temp"].idxmax(), "year"
-        ]
-    else:
-        all_time_max = max_historical_mean
-        all_time_max_year = may_1st_data.loc[
-            may_1st_data["mean_temp"].idxmax(), "year"
-        ]
+
+    all_time_max = may_1st_data["max_temp"].max()
+    all_time_max_year = may_1st_data.loc[
+        may_1st_data["max_temp"].idxmax(), "year"
+    ]
+
 
     # Calculate how many standard deviations tomorrow's temp is from the mean
-    std_dev = may_1st_data["mean_temp"].std()
+    std_dev = may_1st_data["max_temp"].std()
     forecast_temp = 29.0
-    z_score = (forecast_temp - avg_mean_temp) / std_dev
+    z_score = (forecast_temp - avg_max_temp) / std_dev
 
     # Calculate percentile of tomorrow's forecast compared to historical data
-    percentile = (may_1st_data["mean_temp"] < forecast_temp).mean() * 100
+    percentile = (may_1st_data["max_temp"] < forecast_temp).mean() * 100
 
     # Create temperature comparison chart
     may_first_fig = go.Figure()
@@ -298,8 +294,8 @@ def temperature_comparison(date_observed, format_date, go, may_1st_data):
     # Add histogram of historical temperatures
     may_first_fig.add_trace(
         go.Histogram(
-            x=may_1st_data["mean_temp"],
-            nbinsx=20,
+            x=may_1st_data["max_temp"],
+            nbinsx=30,
             name="Historical Mean Temperatures",
             opacity=0.7,
             marker_color="blue",
@@ -308,20 +304,18 @@ def temperature_comparison(date_observed, format_date, go, may_1st_data):
 
     # Add vertical line for average temperature
     may_first_fig.add_vline(
-        x=avg_mean_temp,
+        x=avg_max_temp,
         line_dash="solid",
         line_color="blue",
-        annotation_text=f"Average: {avg_mean_temp:.1f}°C",
-        annotation_position="top right",
+        annotation_text=f"Average: {avg_max_temp:.1f}°C",
+        annotation_position="top",
     )
 
-    # Add vertical line for tomorrow's forecast
+    # Add vertical line for today's forecast
     may_first_fig.add_vline(
         x=forecast_temp,
         line_dash="solid",
         line_color="red",
-        annotation_text=f"Tomorrow: {forecast_temp:.1f}°C",
-        annotation_position="top right",
     )
 
     # Add vertical line for all-time maximum if different from forecast
@@ -331,92 +325,45 @@ def temperature_comparison(date_observed, format_date, go, may_1st_data):
             line_dash="dash",
             line_color="orange",
             annotation_text=f"Previous Record: {all_time_max:.1f}°C ({int(all_time_max_year)})",
-            annotation_position="top left",
+            annotation_position="top",
         )
 
     # Update layout
     may_first_fig.update_layout(
-        title=f"Distribution of Historical {format_date(date_observed.value)} Temperatures in London",
-        xaxis_title="Temperature (°C)",
-        yaxis_title="Count of Years",
+        title=f"<b>Distribution of Historical {format_date(date_observed.value)} Temperatures in London</b>",
+        xaxis_title="<b>Temperature (°C)</b>",
+        yaxis_title="<b>Count of Years</b>",
         template="plotly_white",
+    ).add_annotation(
+            dict(
+                x=29.0,
+                y=12,
+                xref="x",
+                yref="y",
+                text="Today's High: 29°C",
+            )
     )
 
-
-    # Return both plots
-    return (
-        all_time_max,
-        all_time_max_year,
-        avg_mean_temp,
-        forecast_temp,
-        max_historical_mean,
-        min_historical_mean,
-        percentile,
-        z_score,
-    )
+    return
 
 
 @app.cell
 def _(date_observed, format_date, may_1st_data, px):
     # Calculate decade averages to show warming trend
     may_1st_data["decade"] = (may_1st_data["year"] // 10) * 10
-    decade_avg = may_1st_data.groupby("decade")["mean_temp"].mean().reset_index()
+    decade_avg = may_1st_data.groupby("decade")["max_temp"].mean().reset_index()
 
     # Create decade comparison chart
     decade_fig = px.bar(
         decade_avg,
         x="decade",
-        y="mean_temp",
-        title=f"Average {format_date(date_observed.value)} Temperature by Decade",
-        labels={"decade": "Decade", "mean_temp": "Average Temperature (°C)"},
-        color="mean_temp",
+        y="max_temp",
+        title=f"<b>Average High {format_date(date_observed.value)} Temperature by Decade</b>",
+        labels={"decade": "Decade", "max_temp": "Average High Temperature (°C)"},
+        color="max_temp",
         color_continuous_scale="Viridis",
     )
     decade_fig.update_layout(template="plotly_white")
-    return
-
-
-@app.cell
-def _(
-    all_time_max,
-    all_time_max_year,
-    avg_mean_temp,
-    date_observed,
-    forecast_temp,
-    format_date,
-    max_historical_mean,
-    may_1st_data,
-    min_historical_mean,
-    percentile,
-    z_score,
-):
-    # Get recent years for comparison
-    recent_years = 30
-    recent_avg = may_1st_data[
-        may_1st_data["year"] >= (max(may_1st_data["year"]) - recent_years)
-    ]["mean_temp"].mean()
-
-    # Display charts and statistics
-    mo.md(f"""
-    ## Temperature Comparison
-
-    ### Historical Statistics for {format_date(date_observed.value)} in London:
-
-    - **Historical Average Temperature:** {avg_mean_temp:.1f}°C
-    - **Historical Maximum Mean Temperature:** {max_historical_mean:.1f}°C
-    - **Historical Minimum Mean Temperature:** {min_historical_mean:.1f}°C
-    - **All-time Highest Temperature:** {all_time_max:.1f}°C (Year: {int(all_time_max_year)})
-    - **Average Temperature over the last {recent_years} years:** {recent_avg:.1f}°C
-
-    ### Tomorrow's Forecast:
-
-    Tomorrow's forecast of **29.0°C** is:
-    - {z_score:.1f} standard deviations above the historical average
-    - In the {percentile:.1f}th percentile of historical records
-    - {"Breaking the all-time record" if forecast_temp > all_time_max else f"{forecast_temp - all_time_max:.1f}°C below the all-time record"}
-
-    This makes it an **{"extremely" if abs(z_score) > 3 else "very" if abs(z_score) > 2 else "somewhat"}** unusual temperature for May 1st in London.
-    """)
     return
 
 
